@@ -59,9 +59,27 @@ Dependencies:
 
 It is recommended to bind your DB address on 127.0.0.1 or on internal ip. Also, please set up the password for advanced security!!!
 
+#### Bind to 127.0.0.1
+
     $ sudo nano /etc/redis/redis.conf
 
 Uncomment `bind 127.0.0.1`
+
+#### Setup a Password
+
+    $ echo "password" | sha256sum
+
+copy the generated password and paste in the following
+
+    $ sudo nano /etc/redis/redis.conf
+
+uncomment this line  `requirepass foobared`
+replace foobared with the generated password you copied.
+
+    $sudo service redis-server restart
+
+To check that Redis is working, use the Redis command line.
+$ redis-cli
 
 ### Install nginx
 
