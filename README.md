@@ -58,7 +58,9 @@ Dependencies:
     $ sudo apt-get install redis-server
 
 It is recommended to bind your DB address on 127.0.0.1 or on internal ip. Also, please set up the password for advanced security!!!
+
     $ sudo nano /etc/redis/redis.conf
+
 Uncomment `bind 127.0.0.1`
 
 ### Install nginx
