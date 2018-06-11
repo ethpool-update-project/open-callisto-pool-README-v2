@@ -38,6 +38,7 @@ Dependencies:
     $ adduser clopool
     $ usermod -aG sudo clopool
     $ su clopool
+    $ cd ~
 
 ### Install the required Dependencies
 
@@ -45,17 +46,20 @@ Dependencies:
     $ sudo apt-get install -y software-properties-common build-essential unzip curl git nano
     $ sudo apt-get upgrade -y
 
+### Remove unnecessary services
+    $ sudo apt-get -y autoremove apache2
+
 
 ### Install go lang
 
     $ sudo add-apt-repository -y ppa:gophers/archive
     $ sudo apt-get -y update
-    $ sudo apt-get install -y build-essential golang-1.10-go unzip
+    $ sudo apt-get -y install golang-1.10-go
     $ sudo ln -s /usr/lib/go-1.10/bin/go /usr/local/bin/go
 
 ### Install redis-server
 
-    $ sudo apt-get install redis-server
+    $ sudo apt-get -y install redis-server
 
 It is recommended to bind your DB address on 127.0.0.1 or on internal ip. Also, please set up the password for advanced security!!!
 
@@ -79,7 +83,10 @@ replace foobared with the generated password you copied.
     $sudo service redis-server restart
 
 To check that Redis is working, use the Redis command line.
-$ redis-cli
+
+    $ redis-cli
+
+to authenticate, do the following in **redis-cli** 'auth yourHashedString'
 
 ### Install nginx
 
@@ -87,17 +94,18 @@ $ redis-cli
 
 Search on Google for nginx-setting
 
-### Install NODE
+### Install NODEJS
 
 This will install the latest nodejs
 
-    $ curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+    $ sudo curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
     $ sudo apt-get install -y nodejs
 
 ### Install multi-geth
+*MAke sure to compile the appropriate version of `geth` for the coin you're pool is for*
 
-    $ wget https://github.com/ethereumsocial/multi-geth/releases/download/v1.8.10/multi-geth-linux-v1.8.10.zip
-    $ unzip multi-geth-linux-v1.8.10.zip
+    $ sudo wget https://github.com/ethereumsocial/multi-geth/releases/download/v1.8.10/multi-geth-linux-v1.8.10.zip
+    $ sudo unzip multi-geth-linux-v1.8.10.zip
     $ sudo mv geth /usr/local/bin/geth
 
 ### Run multi-geth
@@ -114,7 +122,7 @@ Description=Callisto for Pool
 After=network-online.target
 
 [Service]
-ExecStart=/usr/local/bin/geth --callisto --cache=1024 --rpc --extradata "Mined by <your-pool-domain>" --ethstats "<your-pool-domain>:Callisto@clostats.net"
+ExecStart=/usr/local/bin/geth --callisto --cache=1024 --extradata "Mined by <your-pool-domain>" --ethstats "<your-pool-domain>:Callisto@clostats.net" --unlock="Wallet_Address" --password="/home/<your-user-name>/.walletpass" --rpc --rpcaddr 127.0.0.1 --rpcapi eth,net,web3
 User=<your-user-name>
 
 [Install]
@@ -130,26 +138,53 @@ If you want to debug the node command
 
     $ sudo systemctl status callisto
 
+To monitor synchronization progress
+
+    $ sudo journalctl -f -u callisto
+
 Run console
 
     $ geth attach
+
+*You can create your own shortcut for `geth attach` on `/usr/local/bin/gethattach` for example, make sure to include* **--datadir** *for the ipc*
+
+    $ sudo nano /usr/local/bin/attachgeth.sh
+
+````
+/usr/local/bin/geth attach ipc://home/<your-user-name>/.ethereum/callisto/geth.ipc
+````
+
+    $ chmod 755 /usr/local/bin/attachgeth.sh
+
+Now you can use `atachgeth.sh` from anywhere in your servers.
+
+
+
 
 Register pool account and open wallet for transaction. This process is always required, when the wallet node is restarted.
 
     > personal.newAccount()
     > personal.unlockAccount(eth.accounts[0],"password",40000000)
+    > exit
+
+#### Save wallet password
+Save wallet password in `/home/pooluser/.walletpass` and embed it in the pool.service line
 
 ### Install Callisto Pool
 
-    $ git clone https://github.com/chainkorea/open-callisto-pool
-    $ cd open-callisto-pool
-    $ make all
+    $ sudo git clone https://github.com/chainkorea/open-callisto-pool
+    $ sudo cd open-callisto-pool
+    $ sudo make all
 
-If you face open-callisto-pool after ls ~/open-callisto-pool/build/bin/, the installation has completed.
+If you get a `open-callisto-pool` after ls `ls ~/open-callisto-pool/build/bin/`, the installation has completed.
 
-    $ ls ~/open-callisto-pool/build/bin/
+
 
 ### Set up Callisto pool
+
+Here, you can use [phatblinkie's](https://github.com/phatblinkie/cryptopools.info-pool/blob/master/service_installer.sh) service_installer.sh (*if you know how to use it*)
+
+Or, do the regular:
 
     $ mv config.example.json config.json
     $ nano config.json
@@ -349,6 +384,12 @@ Set up based on commands below.
   }
 }
 ```
+**This file has settings for, API, 1x Stratum, Payout, Unlocker, all combined together to run as one service**
+  * Stratum is the node miners will connect two with a set difficulty
+  * API is the service that submits/reports stats to the website
+  * Unlocker is the service that does the accounting based on the payout scheme, which miner gets how much of the block, and writes down to DB
+  * Payout is the service that does the actual transactions to miners.
+
 
 If you are distributing your pool deployment to several servers or processes,
 create several configs and disable unneeded modules on each server. (Advanced users)
@@ -363,18 +404,18 @@ I recommend this deployment strategy:
 ### Run Pool
 It is required to run pool by serviced. If it is not, the terminal could be stopped, and pool doesn’t work.
 
-    $ sudo nano /etc/systemd/system/etherpool.service
+    $ sudo nano /etc/systemd/system/clopool.service
 
 Copy the following example
 
 ```
 [Unit]
-Description=Etherpool
+Description=Callisto
 After=callisto.target
 
 [Service]
 Type=simple
-ExecStart=/home/<your-user-name>/open-callisto-pool/build/bin/open-callisto-pool /home/<your-user-name>/open-callisto-pool/config.json
+ExecStart=/home/clopool/open-callisto-pool/build/bin/open-callisto-pool /home/clopool/open-callisto-pool/config.json
 
 [Install]
 WantedBy=multi-user.target
@@ -382,14 +423,15 @@ WantedBy=multi-user.target
 
 Then run pool by the following commands
 
-    $ sudo systemctl enable etherpool
-    $ sudo systemctl start etherpool
+    $ sudo systemctl enable clopool
+    $ sudo systemctl start clopool
 
 If you want to debug the node command
 
-    $ sudo systemctl status etherpool
+    $ sudo systemctl status clopool
 
 Backend operation has completed so far.
+**If you want to separate each service of the pool in a separate process, then you need to make different configs and a service for each**
 
 ### Open Firewall
 
