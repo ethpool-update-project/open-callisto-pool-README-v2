@@ -464,42 +464,35 @@ The frontend is a single-page Ember.js application that polls the pool API to re
     $ ./build.sh
     $ cp -R ~/open-callisto-pool/www/dist ~/www
 
-As you can see above, the frontend of the pool homepage is created. Then, move to the directory, www, which services the file.
+As you can see above, the frontend of the pool homepage is created. Then, moved to the directory `www` which serves the file.
+*Change `favicon.ico` file to your taste (act special)*
 
-Set up nginx.
+
+## Set up Nginx.
 
     $ sudo nano /etc/nginx/sites-available/default
 
 Modify based on configuration file.
 
-    # Default server configuration
-    # nginx example
-
-    upstream api {
-        server 127.0.0.1:8080;
-    }
-
+````
     server {
         listen 80 default_server;
         listen [::]:80 default_server;
         root /home/<your-user-name>/www;
 
-        # Add index.php to the list if you are using PHP
         index index.html index.htm index.nginx-debian.html;
 
         server_name _;
 
         location / {
-                # First attempt to serve request as file, then
-                # as directory, then fall back to displaying a 404.
                 try_files $uri $uri/ =404;
         }
 
         location /api {
-                proxy_pass http://api;
-        }
-
+                proxy_pass http://127.0.0.1:8080/api;
+          }
     }
+````
 
 After setting nginx is completed, run the command below.
 
@@ -529,7 +522,7 @@ server_name <your-pool-domain>;
 . . .
 ```
 
-Change the _ to your pool domain, and now you can obtain your auto-renewaled ssl certificate for free!
+Change the _ to your pool domain, and now you can obtain your auto-renewed SSL certificate for free!
 
 ```
 $ sudo certbot --nginx -d <your-pool-domain>
@@ -550,6 +543,10 @@ Now you can access your pool's frontend via https! Share your pool link!
 
 Made by sammy007. Licensed under GPLv3.
 Modified by Akira Takizawa & The Ellaism Project.
+
+#### Updated / Edited By:
+* **Brian Bowen** - [phatblinkie](https://github.com/phatblinkie)
+* **Mohannad Otaibi** - [mo9a7i](https://github.com/mo9a7i)
 
 #### Contributors
 
